@@ -1,0 +1,15 @@
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: Zuricatos
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-2
+
+functions:
+  hello:
+    handler: src/receiveAudio.receiveAudio
+    events:
+      - httpApi:
+          path: /receive/audio
+          method: post
