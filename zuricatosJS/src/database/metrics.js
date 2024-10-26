@@ -29,7 +29,7 @@ module.exports.getMetrics = async (event) => {
       dataArray.push(debtor.rows[i]);
     }
 
-    dataArray.push(budget);
+    dataArray.push(budget.rows[0]);
 
     return {
       statusCode: 200,
