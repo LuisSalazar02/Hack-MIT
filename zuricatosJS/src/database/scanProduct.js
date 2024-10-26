@@ -20,37 +20,22 @@ module.exports.scanProduct = async (event) => {
   const file = parsedData.files[0];
   const fileBuffer = file.content; // Assuming the parser returns the file content as a buffer
 
-  // Convert the buffer to a base64 data URL format that Quagga can read
-  const base64Image = `data:${file.mimetype};base64,${fileBuffer.toString(
-    "base64"
-  )}`;
+  const fileName = file.filename || "uploadedFile"; // Fallback name if filename is not provided
 
-  const saveBase64ImageToTmp = (base64Image, filename) => {
-    // Remove the base64 prefix to get only the image data
-    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-
-    // Convert the base64 string back to binary data
-    const imageBuffer = Buffer.from(base64Data, "base64");
-
-    // Define the file path in the /tmp directory
-    const filePath = path.join("/tmp/", filename);
-
-    // Write the buffer to a file in the /tmp directory
-    fs.writeFileSync(filePath, imageBuffer);
-
-    console.log(`Image saved to ${filePath}`);
-    return filePath;
-  };
-
-  const test = saveBase64ImageToTmp(base64Image, file.filename);
-
-  console.log(test);
+  // Save the file to the current directory
+  fs.writeFile(path.join(__dirname, fileName), fileBuffer, (err) => {
+    if (err) {
+      console.error("Error saving file:", err);
+    } else {
+      console.log("File saved successfully:", fileName);
+    }
+  });
 
   return new Promise((resolve, reject) => {
     // Start barcode decoding
     Quagga.decodeSingle(
       {
-        src: test,
+        src: "./file",
         numOfWorkers: 0,
         inputStream: { size: 800 },
         decoder: { readers: ["ean_reader"] },
