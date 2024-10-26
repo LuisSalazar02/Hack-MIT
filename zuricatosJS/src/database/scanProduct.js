@@ -2,8 +2,8 @@ const axios = require("axios");
 const dbPool = require("./dbPool");
 const Quagga = require("@ericblade/quagga2");
 const parser = require("lambda-multipart-parser");
-const fs = require("fs");
-const path = require("path");
+const AWS = require("aws-sdk");
+const s3 = new AWS.S3();
 
 module.exports.scanProduct = async (event) => {
   // Parse the multipart form data from the event
@@ -21,18 +21,37 @@ module.exports.scanProduct = async (event) => {
   // Get the first file (assumes only one file is uploaded)
   const file = parsedData.files[0];
   const fileBuffer = file.content; // Assuming the parser returns the file content as a buffer
-  const fileName = file.filename || "uploadedFile.jpg";
-  const filePath = path.join("/tmp", fileName);
 
-  fs.writeFile(filePath, fileBuffer, (err) => {
-    if (err) {
-      console.error("Error saving file:", err);
-    } else {
-      console.log("File saved successfully:", filePath);
-    }
-  });
+  try {
+    const params = {
+      Bucket: "barcode-image-files",
+      Key: "photo.jpg", // The desired name for the file in S3
+      Body: fileBuffer,
+      ContentType: "image/jpeg", // Adjust based on file type
+    };
 
-  Quagga.decodeSingle(
+    const result = await s3.upload(params).promise();
+    console.log("File uploaded successfully:", result.Location);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "File uploaded successfully",
+        location: result.Location,
+      }),
+    };
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Failed to upload file",
+        error: error.message,
+      }),
+    };
+  }
+
+  /*Quagga.decodeSingle(
     {
       src: filePath, // Path to your image
       numOfWorkers: 0, // 0 for Node.js (no web workers)
@@ -51,7 +70,7 @@ module.exports.scanProduct = async (event) => {
         console.error("Barcode not found or could not be read");
       }
     }
-  );
+  );*/
 
   /*return new Promise((resolve, reject) => {
     // Start barcode decoding
