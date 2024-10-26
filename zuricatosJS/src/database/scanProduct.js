@@ -25,11 +25,28 @@ module.exports.scanProduct = async (event) => {
     "base64"
   )}`;
 
+  const saveBase64ImageToTmp = (base64Image, filename) => {
+    // Remove the base64 prefix to get only the image data
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+
+    // Convert the base64 string back to binary data
+    const imageBuffer = Buffer.from(base64Data, "base64");
+
+    // Define the file path in the /tmp directory
+    const filePath = path.join("/tmp", filename);
+
+    // Write the buffer to a file in the /tmp directory
+    fs.writeFileSync(filePath, imageBuffer);
+
+    console.log(`Image saved to ${filePath}`);
+    return filePath;
+  };
+
   return new Promise((resolve, reject) => {
     // Start barcode decoding
     Quagga.decodeSingle(
       {
-        src: base64Image,
+        src: saveBase64ImageToTmp(base64Image, file.filename),
         numOfWorkers: 0,
         inputStream: { size: 800 },
         decoder: { readers: ["ean_reader"] },
