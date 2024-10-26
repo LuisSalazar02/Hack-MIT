@@ -33,13 +33,26 @@ module.exports.scanProduct = async (event) => {
     const result = await s3.upload(params).promise();
     console.log("File uploaded successfully:", result.Location);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: "File uploaded successfully",
-        location: result.Location,
-      }),
-    };
+    Quagga.decodeSingle(
+      {
+        src: result.Location, // Path to your image
+        numOfWorkers: 0, // 0 for Node.js (no web workers)
+        inputStream: {
+          size: 800, // Set the size of the input
+        },
+        decoder: {
+          readers: ["ean_reader"], // Use the EAN reader for EAN-13
+        },
+        locate: true, // Improves detection accuracy
+      },
+      (result) => {
+        if (result && result.codeResult) {
+          console.log("EAN-13 Code:", result.codeResult.code);
+        } else {
+          console.error("Barcode not found or could not be read");
+        }
+      }
+    );
   } catch (error) {
     console.error("Error uploading file:", error);
     return {
@@ -50,27 +63,6 @@ module.exports.scanProduct = async (event) => {
       }),
     };
   }
-
-  /*Quagga.decodeSingle(
-    {
-      src: filePath, // Path to your image
-      numOfWorkers: 0, // 0 for Node.js (no web workers)
-      inputStream: {
-        size: 800, // Set the size of the input
-      },
-      decoder: {
-        readers: ["ean_reader"], // Use the EAN reader for EAN-13
-      },
-      locate: true, // Improves detection accuracy
-    },
-    (result) => {
-      if (result && result.codeResult) {
-        console.log("EAN-13 Code:", result.codeResult.code);
-      } else {
-        console.error("Barcode not found or could not be read");
-      }
-    }
-  );*/
 
   /*return new Promise((resolve, reject) => {
     // Start barcode decoding
