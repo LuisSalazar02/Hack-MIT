@@ -25,7 +25,7 @@ module.exports.getMetrics = async (event) => {
       least_sellers.rows[1],
     ];
 
-    debtor.rows.array.forEach((element) => {
+    debtor.rows.forEach((element) => {
       dataArray.push(element);
     });
 
