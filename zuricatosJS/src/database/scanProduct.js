@@ -33,9 +33,19 @@ module.exports.scanProduct = async (event) => {
     const result = await s3.upload(params).promise();
     console.log("File uploaded successfully:", result.Location);
 
+    const downloadParams = {
+      Bucket: "barcode-image-files",
+      Key: "photo.jpg",
+    };
+    const localPath = "/tmp/photo.jpg";
+    const s3Object = await s3.getObject(downloadParams).promise();
+    fs.writeFileSync(localPath, s3Object.Body);
+
+    console.log("File downloaded to:", localPath);
+
     Quagga.decodeSingle(
       {
-        src: result.Location, // Path to your image
+        src: localPath, // Path to your image
         numOfWorkers: 0, // 0 for Node.js (no web workers)
         inputStream: {
           size: 800, // Set the size of the input
