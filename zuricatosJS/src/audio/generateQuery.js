@@ -1,4 +1,5 @@
 const axios = require("axios");
+const AWS = require("aws-sdk");
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 
@@ -6,7 +7,8 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 module.exports.generateQuery = async (event) => {
   try {
     // Parsear el cuerpo del evento para obtener el texto transcrito
-    const { textoTranscrito } = JSON.parse(event.body);
+    //const { textoTranscrito } = JSON.parse(event.body);
+    const textoTranscrito = event.textoTranscrito;
     console.log(`Texto transcrito: ${textoTranscrito}`);
 
     // Determinar el tipo de operación (compra, venta o fianza)
@@ -16,16 +18,33 @@ module.exports.generateQuery = async (event) => {
     }
 
     // Generar la consulta SQL correspondiente
-    let { tipoConsulta, valores } = await generarQuerySql(textoTranscrito, tipoOperacion);
+    let { tipoConsulta, valores } = await generarQuerySql(
+      textoTranscrito,
+      tipoOperacion
+    );
     if (!tipoConsulta) throw new Error("No se pudo generar la consulta SQL.");
 
     // Quitar los primeros 12 caracteres de la consulta SQL
     tipoConsulta = quitarPrimeros12Caracteres(tipoConsulta);
 
     // Formatear la respuesta en un solo texto corrido
-    const respuestaFormateada = `{"${tipoConsulta}", "value": ${JSON.stringify(valores)}}`;
+    const respuestaFormateada = `{"${tipoConsulta}", "value": ${JSON.stringify(
+      valores
+    )}}`;
 
     console.log(`Respuesta formateada: ${respuestaFormateada}`);
+
+    //Pass the query to another lambda
+    const lambda = new AWS.Lambda();
+    const lambdaParams = {
+      FunctionName: "nanostores-dev-queryDataBase",
+      Payload: JSON.stringify({ query: "the query", params: "the params" }),
+    };
+
+    const lambdaResponse = await lambda.invoke(lambdaParams).promise();
+    console.log(lambdaResponse);
+    const responseBody = JSON.parse(lambdaResponse.Payload);
+    console.log(responseBody);
 
     return {
       statusCode: 200,
@@ -46,10 +65,14 @@ function determinarTipoOperacion(texto) {
     return "compra";
   } else if (texto.includes("vendí")) {
     return "venta";
-  } else if (texto.includes("fié") || texto.includes("me debe") || texto.includes("presté")) {
+  } else if (
+    texto.includes("fié") ||
+    texto.includes("me debe") ||
+    texto.includes("presté")
+  ) {
     return "fianza";
   }
-  return null; 
+  return null;
 }
 
 // Función para generar una consulta SQL en PostgreSQL usando GPT-4
@@ -79,7 +102,11 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
       {
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL y los valores separados." },
+          {
+            role: "system",
+            content:
+              "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL y los valores separados.",
+          },
           { role: "user", content: prompt },
         ],
       },
@@ -100,17 +127,20 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
 
     if (respuesta.includes("VALORES:")) {
       const partes = respuesta.split("VALORES:");
-      tipoConsulta = partes[0].replace("inventario", "productos").trim(); 
+      tipoConsulta = partes[0].replace("inventario", "productos").trim();
       // Separar y limpiar los valores
       const valoresRaw = partes[1].trim().split(",");
-      valores = valoresRaw.map(v => v.trim().replace(/'/g, "")); 
+      valores = valoresRaw.map((v) => v.trim().replace(/'/g, ""));
     } else {
-      tipoConsulta = respuesta.replace("inventario", "productos").trim(); 
+      tipoConsulta = respuesta.replace("inventario", "productos").trim();
     }
 
     return { tipoConsulta, valores };
   } catch (error) {
-    console.error("Error al generar la consulta SQL:", error.response ? error.response.data : error.message);
+    console.error(
+      "Error al generar la consulta SQL:",
+      error.response ? error.response.data : error.message
+    );
     return { tipoConsulta: null, valores: null };
   }
 }
@@ -120,5 +150,5 @@ function quitarPrimeros12Caracteres(cadena) {
   if (cadena.length > 12) {
     return cadena.substring(12);
   }
-  return cadena; 
+  return cadena;
 }

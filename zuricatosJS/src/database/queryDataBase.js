@@ -2,7 +2,9 @@ const AWS = require("aws-sdk");
 const dbPool = require("./dbPool");
 
 module.exports.queryReceiver = async (event) => {
-  const { query, params } = JSON.parse(event.body);
+  //const { query, params } = JSON.parse(event.b);
+  const query = event.query;
+  const params = event.params;
   let client;
 
   try {
@@ -14,7 +16,7 @@ module.exports.queryReceiver = async (event) => {
     if (isSelectQuery) {
       const lambda = new AWS.Lambda();
       const lambdaParams = {
-        FunctionName: "analyzeQueryResults",
+        FunctionName: "nanostores-dev-analyzeQueryResults",
         Payload: JSON.stringify({ data: result.rows }),
       };
 

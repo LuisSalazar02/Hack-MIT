@@ -16,17 +16,20 @@ module.exports.transcriptAudio = async (event) => {
     //const bucketName = event.bucketName; // Nombre del bucket de S3
     //const fileKey = event.fileKey; // Nombre del archivo en S3
     console.log(event);
-    const { bucketName, fileKey } = JSON.parse(event.body);
+    //const { bucketName, fileKey } = JSON.parse(event.body);
+    const uploadedAudioKey = event.uploadedAudioKey;
 
-    if (!bucketName || !fileKey) {
+    bucketName = "audio-files-mit";
+
+    if (!bucketName || !uploadedAudioKey) {
       throw new Error(
         "El nombre del bucket y el nombre del archivo son obligatorios."
       );
     }
 
     // Descargar el archivo de S3
-    const archivoLocal = `/tmp/${path.basename(fileKey)}`;
-    await descargarDeS3(bucketName, fileKey, archivoLocal);
+    const archivoLocal = `/tmp/${path.basename(uploadedAudioKey)}`;
+    await descargarDeS3(bucketName, uploadedAudioKey, archivoLocal);
 
     // Transcribir el archivo de audio
     const textoTranscrito = await transcribirAudio(archivoLocal);
@@ -35,24 +38,30 @@ module.exports.transcriptAudio = async (event) => {
     }
     console.log(`Texto transcrito: ${textoTranscrito}`);
 
-    const querySugerido = await generarQuerySql(textoTranscrito);
-    if (!querySugerido) {
-      throw new Error("No se pudo generar la query SQL.");
-    }
-    console.log(`Query obtenido para la base de productos: ${querySugerido}`);
+    const lambda = new AWS.Lambda();
+    const lambdaParams = {
+      FunctionName: "nanostores-dev-generateQuery",
+      Payload: JSON.stringify({ textoTranscrito: textoTranscrito }),
+    };
+
+    const lambdaResponse = await lambda.invoke(lambdaParams).promise();
+    console.log(lambdaResponse);
+    const responseBody = JSON.parse(lambdaResponse.Payload);
+    console.log(responseBody);
 
     // Respuesta exitosa
     return {
       statusCode: 200,
+      responseAudioKey: responseBody.responseAudioKey,
       body: JSON.stringify({
         textoTranscrito: textoTranscrito,
-        querySugerido: querySugerido,
       }),
     };
   } catch (error) {
     console.error("Error en el proceso:", error.message);
     return {
       statusCode: 500,
+      responseAudioKey: "",
       body: JSON.stringify({
         error: error.message,
       }),
@@ -61,10 +70,10 @@ module.exports.transcriptAudio = async (event) => {
 };
 
 // Descargar el archivo de S3
-async function descargarDeS3(bucketName, fileKey, destinoLocal) {
+async function descargarDeS3(bucketName, uploadedAudioKey, destinoLocal) {
   const params = {
     Bucket: bucketName,
-    Key: fileKey,
+    Key: uploadedAudioKey,
   };
 
   const fileStream = fs.createWriteStream(destinoLocal);
@@ -103,41 +112,5 @@ async function transcribirAudio(audioFilePath) {
       error.response ? error.response.data : error.message
     );
     return null;
-  }
-}
-
-// generar una consulta SQL en PostgreSQL usando GPT-4
-async function generarQuerySql(textoTranscrito) {
-  try {
-    const prompt = `Genera solo una consulta SQL de inserción en PostgreSQL para lo siguiente: ${textoTranscrito}. No incluyas explicaciones ni ejemplos de creación de tablas.`;
-
-    const response = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Eres un asistente experto en SQL para bases de datos PostgreSQL.",
-          },
-          { role: "user", content: prompt },
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${openaiApiKey}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const sqlQuery = response.data.choices[0].message.content.trim(); // Obtener la consulta SQL generada
-    return sqlQuery;
-  } catch (error) {
-    console.error(
-      "Error al generar la consulta SQL:",
-      error.response ? error.response.data : error.message
-    );
   }
 }
