@@ -2,6 +2,8 @@ const axios = require("axios");
 const dbPool = require("./dbPool");
 const Quagga = require("@ericblade/quagga2");
 const parser = require("lambda-multipart-parser");
+const fs = require("fs");
+const path = require("path");
 
 module.exports.scanProduct = async (event) => {
   // Parse the multipart form data from the event
