@@ -7,7 +7,6 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 module.exports.generateQuery = async (event) => {
   try {
     // Parsear el cuerpo del evento para obtener el texto transcrito
-    //const { textoTranscrito } = JSON.parse(event.body);
     const textoTranscrito = event.textoTranscrito;
     console.log(`Texto transcrito: ${textoTranscrito}`);
 
@@ -34,13 +33,17 @@ module.exports.generateQuery = async (event) => {
 
     console.log(`Respuesta formateada: ${respuestaFormateada}`);
 
-    //Pass the query to another lambda
+    // Preparar los parámetros para la siguiente Lambda
     const lambda = new AWS.Lambda();
     const lambdaParams = {
       FunctionName: "nanostores-dev-queryDataBase",
-      Payload: JSON.stringify({ query: "the query", params: "the params" }),
+      Payload: JSON.stringify({
+        query: tipoConsulta, // Colocar la consulta generada
+        params: valores,     // Colocar los valores generados
+      }),
     };
 
+    // Invocar la siguiente Lambda
     const lambdaResponse = await lambda.invoke(lambdaParams).promise();
     console.log(lambdaResponse);
     const responseBody = JSON.parse(lambdaResponse.Payload);
