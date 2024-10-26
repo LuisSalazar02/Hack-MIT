@@ -1,97 +1,79 @@
 const AWS = require("aws-sdk");
-const Busboy = require("busboy");
-const s3 = new AWS.S3();
+const parser = require("lambda-multipart-parser");
+
+// Initialize the S3 client
+const s3 = new AWS.S3({ region: "us-east-2" });
+
+/**
+ * Uploads a given file to an S3 bucket and returns a direct link
+ * @param {Object} file - The file to upload
+ * @param {string} bucketName - The name of the S3 bucket
+ * @returns {string} - A direct URL to access the file
+ */
+async function uploadToS3(file, bucketName) {
+  try {
+    // Create a unique key using a timestamp and sanitized filename
+    const timestamp = Date.now();
+    const key = `${file.filename.replace(/\s+/g, "")}`;
+
+    // Upload file to S3
+    await s3
+      .putObject({
+        Bucket: bucketName,
+        Key: key,
+        Body: file.content,
+        ContentType: file.contentType,
+      })
+      .promise();
+
+    // Return a direct link to the uploaded file
+    const url = `https://${bucketName}.s3.amazonaws.com/${key}`;
+    console.log("File uploaded successfully. URL:", url);
+
+    return url;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
+}
 
 module.exports.uploadAudio = async (event) => {
   const bucketName = "audio-files-mit";
-
   console.log("Event received:", JSON.stringify(event)); // Log the event
 
-  new Promise((resolve, reject) => {
-    const busboy = new Busboy({
-      headers: {
-        "content-type":
-          event.headers["Content-Type"] || event.headers["content-type"],
-      },
-    });
+  try {
+    // Parse the multipart form data from the event
+    const parsedData = await parser.parse(event);
+    console.log("Parsed data:", parsedData);
 
-    let uploadParams = {
-      Bucket: bucketName,
-      Key: "", // Will be set to the uploaded file's name
-      Body: null,
-    };
-
-    busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-      console.log(`Receiving file [${fieldname}]: ${filename} (${mimetype})`); // Log file details
-
-      uploadParams.Key = filename; // Set the file name as the S3 object key
-      uploadParams.Body = file; // Set the file stream as the S3 object body
-
-      // Add logging to capture file stream events
-      file.on("data", (data) => {
-        console.log(`File [${filename}] received ${data.length} bytes`);
-      });
-
-      file.on("end", () => {
-        console.log(`Finished receiving file [${filename}]`);
-      });
-    });
-
-    busboy.on("finish", async () => {
-      console.log("Finished parsing form data");
-
-      if (!uploadParams.Body) {
-        console.error("No file body detected");
-        return reject({
-          statusCode: 400,
-          body: JSON.stringify({
-            message: "No file uploaded",
-          }),
-        });
-      }
-
-      try {
-        console.log(
-          "Uploading to S3 with parameters:",
-          JSON.stringify(uploadParams)
-        );
-        const data = await s3.upload(uploadParams).promise();
-        console.log("File uploaded successfully:", data.Location); // Log the S3 location of the file
-
-        resolve({
-          statusCode: 200,
-          body: JSON.stringify({
-            message: "File uploaded successfully",
-            fileUrl: data.Location,
-          }),
-        });
-      } catch (error) {
-        console.error("Error uploading file to S3:", error); // Log the error if upload fails
-        reject({
-          statusCode: 500,
-          body: JSON.stringify({
-            message: "Error uploading file",
-            error: error.message,
-          }),
-        });
-      }
-    });
-
-    // Parse the incoming form data
-    try {
-      busboy.write(Buffer.from(event.body, "base64"));
-      busboy.end();
-    } catch (error) {
-      console.error("Error processing form data:", error);
-      reject({
-        statusCode: 500,
-        body: JSON.stringify({
-          message: "Error processing form data",
-          error: error.message,
-        }),
-      });
+    // Check if any files were uploaded
+    if (!parsedData.files || parsedData.files.length === 0) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "No file uploaded" }),
+      };
     }
-  });
 
-  return;
+    // Get the first file (assumes only one file is uploaded)
+    const file = parsedData.files[0];
+    console.log("Uploading file:", file.filename);
+
+    // Upload to S3 and get the file URL
+    const fileUrl = await uploadToS3(file, bucketName);
+
+    // Return success response with the file URL
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "File uploaded successfully",
+        fileUrl: fileUrl,
+      }),
+    };
+  } catch (error) {
+    console.error("Error handling file upload:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: "Error uploading file" }),
+    };
+  }
 };
