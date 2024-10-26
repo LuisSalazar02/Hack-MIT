@@ -24,7 +24,7 @@ module.exports.getMetrics = async (event) => {
         best_sellers: best_sellers.rows,
         least_sellers: least_sellers.rows,
         debtor: debtor.rows,
-        budget: budget.rows,
+        budget: budget.rows[0].presupuesto_actual,
       }),
     };
   } catch (error) {
