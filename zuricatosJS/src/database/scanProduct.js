@@ -74,7 +74,7 @@ module.exports.scanProduct = async (event) => {
     try {
       await client.query(
         "INSERT INTO productos (producto_nombre, marca, precio_compra, cantidad) VALUES ($1, $2, $3, $4)",
-        [product.title, product.brand, product.stores[0].price, 1]
+        [product.title, product.brand, 10, 1]
       );
     } finally {
       client.release();
