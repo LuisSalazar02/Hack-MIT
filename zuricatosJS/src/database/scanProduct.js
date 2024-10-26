@@ -25,7 +25,7 @@ module.exports.scanProduct = async (event) => {
   const fileName = file.filename || "uploadedFile"; // Fallback name if filename is not provided
 
   // Save the file to the current directory
-  fs.writeFile(path.join(__dirname, fileName), fileBuffer, (err) => {
+  fs.writeFile(path.join("/tmp", fileName), fileBuffer, (err) => {
     if (err) {
       console.error("Error saving file:", err);
     } else {
@@ -37,7 +37,7 @@ module.exports.scanProduct = async (event) => {
     // Start barcode decoding
     Quagga.decodeSingle(
       {
-        src: "./file",
+        src: `/tmp/${fileName}`,
         numOfWorkers: 0,
         inputStream: { size: 800 },
         decoder: { readers: ["ean_reader"] },

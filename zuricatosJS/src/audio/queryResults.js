@@ -7,6 +7,7 @@ module.exports.analyzeQueryResults = async (event) => {
     const lambda = new AWS.Lambda();
     const lambdaParams = {
       FunctionName: "nanostores-dev-textToSpeech",
+      InvocationType: "RequestResponse",
       Payload: JSON.stringify({ text: "Hola, este es un flujo completo" }),
     };
 

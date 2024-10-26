@@ -67,8 +67,11 @@ module.exports.uploadAudio = async (event) => {
     const lambda = new AWS.Lambda();
     const lambdaParams = {
       FunctionName: "nanostores-dev-transcriptAudio",
+      InvocationType: "RequestResponse",
       Payload: JSON.stringify({ uploadedAudioKey: uploadedAudioKey }),
     };
+
+    console.log("lambda params in uploadAudio");
 
     const lambdaResponse = await lambda.invoke(lambdaParams).promise();
     console.log(lambdaResponse);

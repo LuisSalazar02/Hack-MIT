@@ -17,6 +17,7 @@ module.exports.queryReceiver = async (event) => {
       const lambda = new AWS.Lambda();
       const lambdaParams = {
         FunctionName: "nanostores-dev-analyzeQueryResults",
+        InvocationType: "RequestResponse",
         Payload: JSON.stringify({ data: result.rows }),
       };
 

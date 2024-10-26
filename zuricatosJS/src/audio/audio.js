@@ -41,6 +41,7 @@ module.exports.transcriptAudio = async (event) => {
     const lambda = new AWS.Lambda();
     const lambdaParams = {
       FunctionName: "nanostores-dev-generateQuery",
+      InvocationType: "RequestResponse",
       Payload: JSON.stringify({ textoTranscrito: textoTranscrito }),
     };
 

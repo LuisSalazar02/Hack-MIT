@@ -37,6 +37,7 @@ module.exports.generateQuery = async (event) => {
     const lambda = new AWS.Lambda();
     const lambdaParams = {
       FunctionName: "nanostores-dev-queryDataBase",
+      InvocationType: "RequestResponse",
       Payload: JSON.stringify({
         query: tipoConsulta, // Colocar la consulta generada
         params: valores, // Colocar los valores generados
