@@ -7,6 +7,8 @@ const path = require("path");
 // Inicializar el cliente de S3
 const s3 = new AWS.S3();
 
+const openaiApiKey = process.env.OPENAI_API_KEY;
+
 // Función principal de Lambda
 exports.handler = async (event) => {
   try {

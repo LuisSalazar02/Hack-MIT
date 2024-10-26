@@ -2,6 +2,8 @@
   "dependencies": {
     "aws-sdk": "^2.1691.0",
     "lambda-multipart-parser": "^1.0.1",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "serverless": "^3.39.0",
+    "serverless-dotenv-plugin": "^6.0.0"
   }
 }
