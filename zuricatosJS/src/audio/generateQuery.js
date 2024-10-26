@@ -16,8 +16,11 @@ module.exports.generateQuery = async (event) => {
     }
 
     // Generar la consulta SQL correspondiente
-    const { tipoConsulta, valores } = await generarQuerySql(textoTranscrito, tipoOperacion);
+    let { tipoConsulta, valores } = await generarQuerySql(textoTranscrito, tipoOperacion);
     if (!tipoConsulta) throw new Error("No se pudo generar la consulta SQL.");
+
+    // Quitar los primeros 12 caracteres de la consulta SQL
+    tipoConsulta = quitarPrimeros12Caracteres(tipoConsulta);
 
     // Formatear la respuesta en un solo texto corrido
     const respuestaFormateada = `{"${tipoConsulta}", "value": ${JSON.stringify(valores)}}`;
@@ -46,7 +49,7 @@ function determinarTipoOperacion(texto) {
   } else if (texto.includes("fié") || texto.includes("me debe") || texto.includes("presté")) {
     return "fianza";
   }
-  return null; // Si no se detecta un comando válido
+  return null; 
 }
 
 // Función para generar una consulta SQL en PostgreSQL usando GPT-4
@@ -97,13 +100,12 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
 
     if (respuesta.includes("VALORES:")) {
       const partes = respuesta.split("VALORES:");
-      tipoConsulta = partes[0].replace("inventario", "productos").trim(); // Cambiar "inventario" a "productos"
-      
+      tipoConsulta = partes[0].replace("inventario", "productos").trim(); 
       // Separar y limpiar los valores
       const valoresRaw = partes[1].trim().split(",");
-      valores = valoresRaw.map(v => v.trim().replace(/'/g, "")); // Limpiar comillas
+      valores = valoresRaw.map(v => v.trim().replace(/'/g, "")); 
     } else {
-      tipoConsulta = respuesta.replace("inventario", "productos").trim(); // Si no hay valores, solo cambiar el nombre de la tabla
+      tipoConsulta = respuesta.replace("inventario", "productos").trim(); 
     }
 
     return { tipoConsulta, valores };
@@ -111,4 +113,12 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
     console.error("Error al generar la consulta SQL:", error.response ? error.response.data : error.message);
     return { tipoConsulta: null, valores: null };
   }
+}
+
+// Función para quitar los primeros 12 caracteres de una cadena
+function quitarPrimeros12Caracteres(cadena) {
+  if (cadena.length > 12) {
+    return cadena.substring(12);
+  }
+  return cadena; 
 }
