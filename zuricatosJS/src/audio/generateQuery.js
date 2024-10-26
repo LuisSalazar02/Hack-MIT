@@ -54,15 +54,18 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
 
     // Ajustar el prompt según el tipo de operación
     if (tipoOperacion === "compra") {
-      prompt = `Genera una consulta SQL para insertar o actualizar productos en el inventario según este texto: ${textoTranscrito}. 
+      prompt = `Genera una consulta SQL para insertar o actualizar productos en la tabla "productos" según este texto: ${textoTranscrito}. 
                 Si el producto ya existe, actualiza la cantidad; si no, insértalo como un nuevo registro. 
-                No incluyas explicaciones y separa los valores de la consulta SQL.`;
+                Devuelve solo la consulta SQL con los valores separados en el siguiente formato: 
+                'CONSULTA: ...; VALORES: producto, cantidad'.`;
     } else if (tipoOperacion === "venta") {
-      prompt = `Genera una consulta SQL para registrar una venta, disminuyendo la cantidad de productos en el inventario según este texto: ${textoTranscrito}. 
-                No incluyas explicaciones y separa los valores de la consulta SQL.`;
+      prompt = `Genera una consulta SQL para registrar una venta, disminuyendo la cantidad de productos en la tabla "productos" según este texto: ${textoTranscrito}. 
+                Devuelve solo la consulta SQL con los valores separados en el siguiente formato: 
+                'CONSULTA: ...; VALORES: producto, cantidad'.`;
     } else if (tipoOperacion === "fianza") {
-      prompt = `Genera una consulta SQL para registrar una fianza de productos, incluyendo la verificación del deudor en la base de datos según este texto: ${textoTranscrito}. 
-                No incluyas explicaciones y separa los valores de la consulta SQL.`;
+      prompt = `Genera una consulta SQL para registrar una fianza de productos en la tabla "productos", incluyendo la verificación del deudor en la base de datos según este texto: ${textoTranscrito}. 
+                Devuelve solo la consulta SQL con los valores separados en el siguiente formato: 
+                'CONSULTA: ...; VALORES: deudor, producto, cantidad'.`;
     }
 
     // Llamar a la API de OpenAI para obtener la consulta SQL
@@ -71,7 +74,7 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
       {
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde con la consulta SQL y separa los valores sin JSON." },
+          { role: "system", content: "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL y los valores separados." },
           { role: "user", content: prompt },
         ],
       },
@@ -86,17 +89,19 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
     // Procesar la respuesta de GPT-4
     const respuesta = response.data.choices[0].message.content.trim();
 
-    // Buscar los valores separados en la respuesta
-    let querySql = "";
-    let valores = "";
-
     // Dividir la respuesta en la consulta SQL y los valores
+    let querySql = "";
+    let valores = [];
+
     if (respuesta.includes("VALORES:")) {
       const partes = respuesta.split("VALORES:");
-      querySql = partes[0].trim();  // La consulta SQL
-      valores = partes[1].trim();   // Los valores separados
+      querySql = partes[0].replace("inventario", "productos").trim(); // Cambiar "inventario" a "productos"
+      
+      // Separar y limpiar los valores
+      const valoresRaw = partes[1].trim().split(",");
+      valores = valoresRaw.map(v => v.trim().replace(/'/g, "")); // Limpiar comillas
     } else {
-      querySql = respuesta;  // Si no se encuentran valores separados, solo toma la consulta
+      querySql = respuesta.replace("inventario", "productos").trim(); // Si no hay valores, solo cambiar el nombre de la tabla
     }
 
     return { querySql, valores };
