@@ -5,6 +5,20 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-2
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+        - "s3:PutObjectTagging"
+        - "s3:GetObject"
+      Resource: "*"
+
+package:
+  individually: true # Packages each function individually
+  exclude:
+    - node_modules/** # Exclude global node_modules by default
+  include:
+    - src/** # Ensure all src files are included
 
 functions:
   hello:
@@ -13,3 +27,27 @@ functions:
       - httpApi:
           path: /test
           method: get
+
+  testRetrieveAudio:
+    handler: src/audio/testRetrieveAudio.testReturnAudio
+    events:
+      - httpApi:
+          path: /test/audio
+          method: post
+
+  queryDataBase:
+    handler: src/database/query.hello
+    events:
+      - httpApi:
+          path: /test/database
+          method: get
+
+  uploadAudio:
+    handler: src/audio/uploadAudio.uploadAudio
+    events:
+      - httpApi:
+          path: /audio/upload
+          method: post
+    package:
+      include:
+        - node_modules/busboy/**
