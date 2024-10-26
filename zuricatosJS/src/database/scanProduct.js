@@ -5,13 +5,25 @@ const parser = require("lambda-multipart-parser");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 const fs = require("fs");
+const util = require("util");
+
+// Promisify Quagga.decodeSingle for async/await usage
+const decodeSingleAsync = (config) =>
+  new Promise((resolve, reject) => {
+    Quagga.decodeSingle(config, (result) => {
+      if (result && result.codeResult) {
+        resolve(result.codeResult.code);
+      } else {
+        reject(new Error("Barcode not found or could not be read"));
+      }
+    });
+  });
 
 module.exports.scanProduct = async (event) => {
   // Parse the multipart form data from the event
   const parsedData = await parser.parse(event);
   console.log("Parsed data:", parsedData);
 
-  // Check if any files were uploaded
   if (!parsedData.files || parsedData.files.length === 0) {
     return {
       statusCode: 400,
@@ -19,91 +31,64 @@ module.exports.scanProduct = async (event) => {
     };
   }
 
-  // Get the first file (assumes only one file is uploaded)
   const file = parsedData.files[0];
-  const fileBuffer = file.content; // Assuming the parser returns the file content as a buffer
+  const fileBuffer = file.content;
 
   try {
-    const params = {
-      Bucket: "barcode-image-files",
-      Key: "photo.jpg", // The desired name for the file in S3
-      Body: fileBuffer,
-      ContentType: "image/jpeg", // Adjust based on file type
-    };
-
-    const result = await s3.upload(params).promise();
-    console.log("File uploaded successfully:", result.Location);
-
-    const downloadParams = {
+    // Upload file to S3
+    const uploadParams = {
       Bucket: "barcode-image-files",
       Key: "photo.jpg",
+      Body: fileBuffer,
+      ContentType: "image/jpeg",
     };
+    const uploadResult = await s3.upload(uploadParams).promise();
+    console.log("File uploaded successfully:", uploadResult.Location);
+
+    // Download file to local path
+    const downloadParams = { Bucket: "barcode-image-files", Key: "photo.jpg" };
     const localPath = "/tmp/photo.jpg";
     const s3Object = await s3.getObject(downloadParams).promise();
     fs.writeFileSync(localPath, s3Object.Body);
-
     console.log("File downloaded to:", localPath);
 
-    Quagga.decodeSingle(
-      {
-        src: localPath, // Path to your image
-        numOfWorkers: 0, // 0 for Node.js (no web workers)
-        inputStream: {
-          size: 800, // Set the size of the input
-        },
-        decoder: {
-          readers: ["ean_reader"], // Use the EAN reader for EAN-13
-        },
-        locate: true, // Improves detection accuracy
-      },
-      async (result) => {
-        if (result && result.codeResult) {
-          console.log("EAN-13 Code:", result.codeResult.code);
-          let client;
-          try {
-            // Fetch product data from external API
-            const apiResponse = await axios.get(
-              `https://api.barcodelookup.com/v3/products?barcode=${result.codeResult.code}&formatted=y&key=rhrn0cnwx76fxu8meyug0xz377rm1w`
-            );
+    // Decode barcode
+    const eanCode = await decodeSingleAsync({
+      src: localPath,
+      numOfWorkers: 0,
+      inputStream: { size: 800 },
+      decoder: { readers: ["ean_reader"] },
+      locate: true,
+    });
 
-            const product = apiResponse.data.products[0];
+    console.log("EAN-13 Code:", eanCode);
 
-            client = await dbPool.connect();
-
-            // Insert product data into the database
-            await client.query(
-              "INSERT INTO productos (producto_nombre, marca, precio_compra, cantidad) VALUES ($1, $2, $3, $4)",
-              [product.title, product.brand, product.stores[0].price, 1]
-            );
-
-            return {
-              statusCode: 200,
-              body: "Product registered successfully",
-            };
-          } catch (error) {
-            console.error("Error during API/database operation:", error);
-            reject({
-              statusCode: 500,
-              body: `Error: ${error.message}`,
-            });
-          } finally {
-            if (client) {
-              client.release();
-            }
-          }
-        } else {
-          console.error("Barcode not found or could not be read");
-        }
-      }
+    // Fetch product data and insert into the database
+    const apiResponse = await axios.get(
+      `https://api.barcodelookup.com/v3/products?barcode=${eanCode}&formatted=y&key=rhrn0cnwx76fxu8meyug0xz377rm1w`
     );
+
+    const product = apiResponse.data.products[0];
+    const client = await dbPool.connect();
+
+    try {
+      await client.query(
+        "INSERT INTO productos (producto_nombre, marca, precio_compra, cantidad) VALUES ($1, $2, $3, $4)",
+        [product.title, product.brand, product.stores[0].price, 1]
+      );
+    } finally {
+      client.release();
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Product registered successfully" }),
+    };
   } catch (error) {
-    console.error("Error uploading file:", error);
+    console.error("Error:", error.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        message: "Failed to upload file",
-        error: error.message,
-      }),
+      body: JSON.stringify({ message: "Error occurred", error: error.message }),
     };
   }
 };
