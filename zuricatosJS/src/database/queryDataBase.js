@@ -34,7 +34,7 @@ module.exports.queryReceiver = async (event) => {
     } else {
       return {
         statusCode: 200,
-        body: "AudioTestA.mp3", //TODO, set to the hardcoded right file
+        responseAudio: "listo.mp3",
       };
     }
   } catch (error) {
@@ -42,6 +42,7 @@ module.exports.queryReceiver = async (event) => {
     return {
       statusCode: 400,
       body: `Query execution failed: ${error.message}`,
+      responseAudio: "noentendi.mp3",
     };
   } finally {
     if (client) {

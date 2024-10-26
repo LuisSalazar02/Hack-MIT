@@ -56,7 +56,7 @@ module.exports.generateQuery = async (event) => {
   }
 
   const lambdaParams = {
-    FunctionName: "nanostores-dev-queryDatabase",
+    FunctionName: "nanostores-dev-queryDataBase",
     InvocationType: "RequestResponse",
     Payload: JSON.stringify({ query: queryResult }),
   };
