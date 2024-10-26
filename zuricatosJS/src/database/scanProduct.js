@@ -42,11 +42,15 @@ module.exports.scanProduct = async (event) => {
     return filePath;
   };
 
+  const test = saveBase64ImageToTmp(base64Image, file.filename);
+
+  console.log(test);
+
   return new Promise((resolve, reject) => {
     // Start barcode decoding
     Quagga.decodeSingle(
       {
-        src: saveBase64ImageToTmp(base64Image, file.filename),
+        src: test,
         numOfWorkers: 0,
         inputStream: { size: 800 },
         decoder: { readers: ["ean_reader"] },
