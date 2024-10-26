@@ -59,6 +59,7 @@ module.exports.scanProduct = async (event) => {
       async (result) => {
         if (result && result.codeResult) {
           console.log("EAN-13 Code:", result.codeResult.code);
+          let client;
           try {
             // Fetch product data from external API
             const apiResponse = await axios.get(
@@ -67,7 +68,7 @@ module.exports.scanProduct = async (event) => {
 
             const product = apiResponse.data.products[0];
 
-            let client = await dbPool.connect();
+            client = await dbPool.connect();
 
             // Insert product data into the database
             await client.query(
