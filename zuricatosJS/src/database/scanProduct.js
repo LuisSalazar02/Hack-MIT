@@ -21,78 +21,80 @@ module.exports.scanProduct = async (event) => {
   // Get the first file (assumes only one file is uploaded)
   const file = parsedData.files[0];
   const fileBuffer = file.content; // Assuming the parser returns the file content as a buffer
-
   const fileName = file.filename || "uploadedFile"; // Fallback name if filename is not provided
+  const filePath = path.join("/tmp", fileName);
 
-  // Save the file to the current directory
-  fs.writeFile(path.join("/tmp", fileName), fileBuffer, (err) => {
-    if (err) {
-      console.error("Error saving file:", err);
-    } else {
-      console.log("File saved successfully:", fileName);
-    }
-  });
+  try {
+    // Save the file to /tmp
+    await fs.writeFile(filePath, fileBuffer);
+    console.log("File saved successfully:", fileName);
 
-  return new Promise((resolve, reject) => {
-    // Start barcode decoding
-    Quagga.decodeSingle(
-      {
-        src: `/tmp/${fileName}`,
-        numOfWorkers: 0,
-        inputStream: { size: 800 },
-        decoder: { readers: ["ean_reader"] },
-        locate: true,
-      },
-      async (quaggaResult) => {
-        if (!quaggaResult || !quaggaResult.codeResult) {
-          console.error("Barcode not found or could not be read");
-          return reject({
-            statusCode: 400,
-            body: "Barcode not found or could not be read",
-          });
-        }
-
-        const barcode = quaggaResult.codeResult.code;
-        let client;
-
-        try {
-          // Fetch product data from external API
-          const apiResponse = await axios.get(
-            `https://api.barcodelookup.com/v3/products?barcode=${barcode}&formatted=y&key=rhrn0cnwx76fxu8meyug0xz377rm1w`
-          );
-
-          const product = apiResponse.data.products[0];
-          if (!product) {
+    return new Promise((resolve, reject) => {
+      Quagga.decodeSingle(
+        {
+          src: filePath,
+          numOfWorkers: 0,
+          inputStream: { size: 800 },
+          decoder: { readers: ["ean_reader"] },
+          locate: true,
+        },
+        async (quaggaResult) => {
+          if (!quaggaResult || !quaggaResult.codeResult) {
+            console.error("Barcode not found or could not be read");
             return reject({
-              statusCode: 404,
-              body: "Product information not found",
+              statusCode: 400,
+              body: "Barcode not found or could not be read",
             });
           }
 
-          client = await dbPool.connect();
+          const barcode = quaggaResult.codeResult.code;
+          let client;
 
-          // Insert product data into the database
-          await client.query(
-            "INSERT INTO productos (producto_nombre, marca, precio_compra, cantidad) VALUES ($1, $2, $3, $4)",
-            [product.title, product.brand, product.stores[0].price, 1]
-          );
+          try {
+            // Fetch product data from external API
+            const apiResponse = await axios.get(
+              `https://api.barcodelookup.com/v3/products?barcode=${barcode}&formatted=y&key=rhrn0cnwx76fxu8meyug0xz377rm1w`
+            );
 
-          resolve({
-            statusCode: 200,
-            body: "Product registered successfully",
-          });
-        } catch (error) {
-          console.error("Error during API/database operation:", error);
-          reject({
-            statusCode: 500,
-            body: `Error: ${error.message}`,
-          });
-        } finally {
-          if (client) {
-            client.release();
+            const product = apiResponse.data.products[0];
+            if (!product) {
+              return reject({
+                statusCode: 404,
+                body: "Product information not found",
+              });
+            }
+
+            client = await dbPool.connect();
+
+            // Insert product data into the database
+            await client.query(
+              "INSERT INTO productos (producto_nombre, marca, precio_compra, cantidad) VALUES ($1, $2, $3, $4)",
+              [product.title, product.brand, product.stores[0].price, 1]
+            );
+
+            resolve({
+              statusCode: 200,
+              body: "Product registered successfully",
+            });
+          } catch (error) {
+            console.error("Error during API/database operation:", error);
+            reject({
+              statusCode: 500,
+              body: `Error: ${error.message}`,
+            });
+          } finally {
+            if (client) {
+              client.release();
+            }
           }
         }
-      }
-    );
-  });
+      );
+    });
+  } catch (error) {
+    console.error("Error saving or decoding file:", error);
+    return {
+      statusCode: 500,
+      body: `File handling error: ${error.message}`,
+    };
+  }
 };
