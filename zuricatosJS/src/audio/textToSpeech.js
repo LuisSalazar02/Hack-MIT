@@ -21,17 +21,22 @@ module.exports.textToSpeech = async (event) => {
 
     // Check for audio in the response
     if (pollyResponse.AudioStream) {
-      // Convert audio stream to base64 to return in JSON response
-      const audioBase64 = pollyResponse.AudioStream.toString("base64");
+      // Get current date and time for unique filename
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      // Prepare file details
+      const file = {
+        filename: `responseAudio_${timestamp}.mp3`,
+        content: pollyResponse.AudioStream,
+        contentType: "audio/mp3",
+      };
 
+      // Upload audio file to S3
+      const s3Key = await uploadToS3(file, bucketName);
+
+      // Return success response with S3 file key
       return {
         statusCode: 200,
-        headers: {
-          "Content-Type": "audio/mp3",
-          "Content-Disposition": "attachment; filename=output.mp3",
-        },
-        body: audioBase64,
-        isBase64Encoded: true, // Required to handle binary data in Lambda
+        responseAudio: s3Key,
       };
     } else {
       throw new Error("Polly did not return audio data.");
@@ -40,10 +45,31 @@ module.exports.textToSpeech = async (event) => {
     console.error("Error generating speech:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Error generating speech",
-        details: error.message,
-      }),
+      responseAudio: "",
     };
   }
 };
+
+// Auxiliary function to upload to S3
+async function uploadToS3(file, bucketName) {
+  try {
+    const key = file.filename.replace(/\s+/g, "");
+
+    // Upload file to S3
+    await s3
+      .putObject({
+        Bucket: bucketName,
+        Key: key,
+        Body: file.content,
+        ContentType: file.contentType,
+      })
+      .promise();
+
+    // Return the S3 key for reference
+    console.log("File uploaded successfully. Key:", key);
+    return key;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
+}

@@ -22,15 +22,18 @@ module.exports.queryReceiver = async (event) => {
 
       const lambdaResponse = await lambda.invoke(lambdaParams).promise();
       const responseBody = JSON.parse(lambdaResponse.Payload);
+      // Access the responseAudio property
+      const responseAudio = responseBody.responseAudio;
+      console.log("Response audio key from S3:", responseAudio);
 
       return {
         statusCode: 200,
-        body: JSON.stringify(responseBody),
+        responseAudio: responseAudio,
       };
     } else {
       return {
         statusCode: 200,
-        body: "https://audio-files-mit.s3.us-east-2.amazonaws.com/AudioTestA.mp3",
+        body: "AudioTestA.mp3", //TODO, set to the hardcoded right file
       };
     }
   } catch (error) {

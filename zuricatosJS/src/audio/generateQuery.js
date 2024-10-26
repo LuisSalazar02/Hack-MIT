@@ -39,7 +39,7 @@ module.exports.generateQuery = async (event) => {
       FunctionName: "nanostores-dev-queryDataBase",
       Payload: JSON.stringify({
         query: tipoConsulta, // Colocar la consulta generada
-        params: valores,     // Colocar los valores generados
+        params: valores, // Colocar los valores generados
       }),
     };
 
@@ -48,16 +48,20 @@ module.exports.generateQuery = async (event) => {
     console.log(lambdaResponse);
     const responseBody = JSON.parse(lambdaResponse.Payload);
     console.log(responseBody);
+    // Access the responseAudio property
+    const responseAudio = responseBody.responseAudio;
+    console.log("Response audio key from S3:", responseAudio);
 
     return {
       statusCode: 200,
-      body: respuestaFormateada,
+      responseAudio: responseAudio,
     };
   } catch (error) {
     console.error("Error en el proceso:", error.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),
+      responseAudio: "",
     };
   }
 };

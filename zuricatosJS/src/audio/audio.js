@@ -48,11 +48,14 @@ module.exports.transcriptAudio = async (event) => {
     console.log(lambdaResponse);
     const responseBody = JSON.parse(lambdaResponse.Payload);
     console.log(responseBody);
+    // Access the responseAudio property
+    const responseAudio = responseBody.responseAudio;
+    console.log("Response audio key from S3:", responseAudio);
 
     // Respuesta exitosa
     return {
       statusCode: 200,
-      responseAudioKey: responseBody.responseAudioKey,
+      responseAudio: responseAudio,
       body: JSON.stringify({
         textoTranscrito: textoTranscrito,
       }),

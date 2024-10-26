@@ -74,15 +74,17 @@ module.exports.uploadAudio = async (event) => {
     console.log(lambdaResponse);
     const responseBody = JSON.parse(lambdaResponse.Payload);
     console.log(responseBody);
-    console.log(responseBody);
+    // Access the responseAudio property
+    const responseAudio = responseBody.responseAudio;
+    console.log("Response audio key from S3:", responseAudio);
 
     //const bucketName = "audio-files-mit";
-    const pruebitaKey = "pruebaAudio.mp3";
+    //const pruebitaKey = "pruebaAudio.mp3";
     // Retrieve the MP3 file from S3
     const s3Response = await s3
       .getObject({
         Bucket: bucketName,
-        Key: pruebitaKey,
+        Key: responseAudio,
       })
       .promise();
     // Encode the content in base64
