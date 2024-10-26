@@ -4,13 +4,12 @@ const dbPool = require("./dbPool");
 module.exports.queryReceiver = async (event) => {
   //const { query, params } = JSON.parse(event.b);
   const query = event.query;
-  const params = event.params;
   let client;
 
   try {
     client = await dbPool.connect();
 
-    const result = await client.query(query, params);
+    const result = await client.query(query);
     const isSelectQuery = query.trim().toLowerCase().startsWith("select");
 
     if (isSelectQuery) {
