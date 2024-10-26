@@ -34,11 +34,18 @@ module.exports.transcriptAudio = async (event) => {
     }
     console.log(`Texto transcrito: ${textoTranscrito}`);
 
+    const querySugerido = await generarQuerySql(textoTranscrito);
+    if (!querySugerido) {
+      throw new Error("No se pudo generar la query SQL.");
+    }
+    console.log(`Query obtenido para la base de productos: ${querySugerido}`);
+
     // Respuesta exitosa
     return {
       statusCode: 200,
       body: JSON.stringify({
         textoTranscrito: textoTranscrito,
+        querySugerido: querySugerido,
       }),
     };
   } catch (error) {
@@ -95,5 +102,41 @@ async function transcribirAudio(audioFilePath) {
       error.response ? error.response.data : error.message
     );
     return null;
+  }
+}
+
+// generar una consulta SQL en PostgreSQL usando GPT-4
+async function generarQuerySql(textoTranscrito) {
+  try {
+    const prompt = `Genera solo una consulta SQL de inserción en PostgreSQL para lo siguiente: ${textoTranscrito}. No incluyas explicaciones ni ejemplos de creación de tablas.`;
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Eres un asistente experto en SQL para bases de datos PostgreSQL.",
+          },
+          { role: "user", content: prompt },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${openaiApiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const sqlQuery = response.data.choices[0].message.content.trim(); // Obtener la consulta SQL generada
+    return sqlQuery;
+  } catch (error) {
+    console.error(
+      "Error al generar la consulta SQL:",
+      error.response ? error.response.data : error.message
+    );
   }
 }
