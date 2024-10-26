@@ -98,7 +98,7 @@ module.exports.uploadAudio = async (event) => {
       statusCode: 200,
       headers: {
         "Content-Type": "audio/mpeg",
-        "Content-Disposition": `attachment; filename="${pruebitaKey}"`,
+        "Content-Disposition": `attachment; filename="${responseAudio}"`,
       },
       isBase64Encoded: true,
       body: encodedMp3,
