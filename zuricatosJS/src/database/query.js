@@ -1,7 +1,8 @@
 const dbPool = require("./dbPool");
 
 module.exports.hello = async (event) => {
-  const { query, params = [] } = event; // Destructure query and params from event input
+  console.log(event);
+  const { query, params } = event; // Destructure query and params from event input
   let client;
 
   try {
