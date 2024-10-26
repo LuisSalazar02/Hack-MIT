@@ -13,8 +13,6 @@ const s3 = new AWS.S3({ region: "us-east-2" });
 
 async function uploadToS3(file, bucketName) {
   try {
-    // Create a unique key using a timestamp and sanitized filename
-    const timestamp = Date.now();
     const key = `${file.filename.replace(/\s+/g, "")}`;
 
     // Upload file to S3
@@ -31,7 +29,7 @@ async function uploadToS3(file, bucketName) {
     const url = `https://${bucketName}.s3.amazonaws.com/${key}`;
     console.log("File uploaded successfully. URL:", url);
 
-    return url;
+    return key;
   } catch (error) {
     console.error("Error uploading file:", error);
     throw error;
@@ -60,15 +58,44 @@ module.exports.uploadAudio = async (event) => {
     console.log("Uploading file:", file.filename);
 
     // Upload to S3 and get the file URL
-    const fileUrl = await uploadToS3(file, bucketName);
+    const uploadedAudioKey = await uploadToS3(file, bucketName);
+
+    if (!uploadedAudioKey) {
+      throw new Error("File upload fail");
+    }
+
+    const lambda = new AWS.Lambda();
+    const lambdaParams = {
+      FunctionName: "nanostores-dev-transcriptAudio",
+      Payload: JSON.stringify({ uploadedAudioKey: uploadedAudioKey }),
+    };
+
+    const lambdaResponse = await lambda.invoke(lambdaParams).promise();
+    console.log(lambdaResponse);
+    const responseBody = JSON.parse(lambdaResponse.Payload);
+    console.log(responseBody);
+
+    //const bucketName = "audio-files-mit";
+    const pruebitaKey = "pruebaAudio.mp3";
+    // Retrieve the MP3 file from S3
+    const s3Response = await s3
+      .getObject({
+        Bucket: bucketName,
+        Key: pruebitaKey,
+      })
+      .promise();
+    // Encode the content in base64
+    const encodedMp3 = s3Response.Body.toString("base64");
 
     // Return success response with the file URL
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        message: "File uploaded successfully",
-        fileUrl: fileUrl,
-      }),
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Content-Disposition": `attachment; filename="${pruebitaKey}"`,
+      },
+      isBase64Encoded: true,
+      body: encodedMp3,
     };
   } catch (error) {
     console.error("Error handling file upload:", error);

@@ -15,6 +15,7 @@ module.exports.transcriptAudio = async (event) => {
     // Obtener el nombre del archivo de audio desde el evento
     //const bucketName = event.bucketName; // Nombre del bucket de S3
     //const fileKey = event.fileKey; // Nombre del archivo en S3
+    console.log(event);
     const { bucketName, fileKey } = JSON.parse(event.body);
 
     if (!bucketName || !fileKey) {

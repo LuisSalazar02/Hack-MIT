@@ -15,6 +15,7 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
+        - "lambda:InvokeFunction"
         - "s3:PutObject"
         - "s3:PutObjectTagging"
         - "s3:GetObject"
@@ -87,3 +88,9 @@ functions:
       - httpApi:
           path: /query/generate
           method: post
+
+  textToSpeech:
+    handler: src/audio/textToSpeech.textToSpeech
+
+  analyzeQueryResult:
+    handler: src/audio/queryResult.analyzeQueryResult
