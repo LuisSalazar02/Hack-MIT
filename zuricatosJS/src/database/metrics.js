@@ -18,22 +18,21 @@ module.exports.getMetrics = async (event) => {
       "SELECT presupuesto_actual FROM usuarios"
     );
 
-    let dataArray = [
-      best_sellers.rows[0],
-      best_sellers.rows[1],
-      least_sellers.rows[0],
-      least_sellers.rows[1],
-    ];
+    let jsonObject = {
+      best_seller1: best_sellers.rows[0],
+      best_seller2: best_sellers.rows[1],
+      least_seller1: least_sellers.rows[0],
+      least_seller2: least_sellers.rows[1],
+      budget: budget.rows[0].presupuesto_actual,
+    };
 
     for (let i = 0; i < debtor.rowCount; i++) {
-      dataArray.push(debtor.rows[i]);
+      jsonObject[`debtor${i + 1}`] = debtor.rows[i];
     }
-
-    dataArray.push(budget.rows[0]);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(dataArray),
+      body: JSON.stringify({ jsonObject }),
     };
   } catch (error) {
     console.error("Database query failed", error);
