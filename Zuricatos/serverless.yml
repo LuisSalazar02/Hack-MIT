@@ -6,21 +6,31 @@ provider:
   runtime: python3.12
   region: us-east-2
   environment:
-    AWS_DEFAULT_REGION: us-east-2
-    AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY}
-    AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID}
+    ACCESS_KEY_ID: ${env:ACCESS_KEY_ID}
+    SECRET_ACCESS_KEY: ${env:SECRET_ACCESS_KEY}
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+        - "s3:PutObjectTagging"
+        - "s3:GetObject"
+      Resource: "*"
 
 plugins:
   - serverless-dotenv-plugin
 
 functions:
   hello:
-    handler: src/receiveAudio.receiveAudio
+    handler: src/audio/receiveAudio.receiveAudio
     events:
       - httpApi:
           path: /receive/audio
           method: post
 
   testReturnAudio:
-    handler: src/audio/
+    handler: src/audio/testReturnAudio.testReturnAudio
+    events:
+      - httpApi:
+          path: /test/obtain/audio
+          method: get
