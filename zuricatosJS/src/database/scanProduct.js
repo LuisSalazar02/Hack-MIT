@@ -21,6 +21,7 @@ module.exports.scanProduct = async (event) => {
   // Get the first file (assumes only one file is uploaded)
   const file = parsedData.files[0];
   const fileBuffer = file.content; // Assuming the parser returns the file content as a buffer
+  const fileName = file.filename || "uploadedFile.jpg";
   const filePath = path.join("/tmp", fileName);
 
   fs.writeFile(filePath, fileBuffer, (err) => {
