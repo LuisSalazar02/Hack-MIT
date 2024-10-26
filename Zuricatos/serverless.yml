@@ -41,3 +41,38 @@ functions:
       - httpApi:
           path: /audio/clean
           method: post
+
+  createProducts:
+    handler: src/database/productos.create
+    events:
+      - httpApi:
+          path: /products/create
+          method: post
+
+  getProducts:
+    handler: src/database/productos.read
+    events:
+      - httpApi:
+          path: /products/get/{id}
+          method: get
+
+  updatedProductsQuantity:
+    handler: src/database/productos.update_cantidad
+    events:
+      - httpApi:
+          path: /products/update/quantity/{id}
+          method: patch
+
+  deleteProduct:
+    handler: src/database/productos.delete
+    events:
+      - httpApi:
+          path: /products/delete/{id}
+          method: delete
+
+  getUsers:
+    handler: src/database/usuarios.read
+    events:
+      - httpApi:
+          path: /users/get/{id}
+          method: get
