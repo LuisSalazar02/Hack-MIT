@@ -69,9 +69,14 @@ module.exports.generateQuery = async (event) => {
 
 // Función para determinar el tipo de operación basado en el texto transcrito
 function determinarTipoOperacion(texto) {
-  if (texto.includes("añade")) {
+  if (texto.includes("añade") || texto.includes("Añade")) {
     return "compra";
-  } else if (texto.includes("vendí")) {
+  } else if (
+    texto.includes("vendí") ||
+    texto.includes("Vendí") ||
+    texto.includes("vendi") ||
+    texto.includes("Vendi")
+  ) {
     return "venta";
   } else if (
     texto.includes("fié") ||
