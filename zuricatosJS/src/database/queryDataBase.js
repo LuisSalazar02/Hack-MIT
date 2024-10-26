@@ -4,6 +4,7 @@ const dbPool = require("./dbPool");
 module.exports.queryReceiver = async (event) => {
   //const { query, params } = JSON.parse(event.b);
   const query = event.query;
+  console.log(query);
   let client;
 
   try {
