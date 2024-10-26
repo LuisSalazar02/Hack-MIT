@@ -32,7 +32,7 @@ module.exports.getMetrics = async (event) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ jsonObject }),
+      body: JSON.stringify(jsonObject),
     };
   } catch (error) {
     console.error("Database query failed", error);
