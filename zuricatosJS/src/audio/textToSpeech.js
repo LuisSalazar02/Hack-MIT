@@ -1,10 +1,12 @@
 const AWS = require("aws-sdk");
 const polly = new AWS.Polly();
+const s3 = new AWS.S3();
 
-exports.textToSpeech = async (event) => {
+module.exports.textToSpeech = async (event) => {
   try {
     // Retrieve the text to convert from event data
     const text = event.data;
+    const bucketName = "audio-files-mit";
 
     // Set up Polly parameters
     const params = {

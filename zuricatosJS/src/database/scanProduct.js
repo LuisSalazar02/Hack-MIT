@@ -1,8 +1,23 @@
 const axios = require("axios");
 const dbPool = require("./dbPool");
 const Quagga = require("@ericblade/quagga2");
+const parser = require("lambda-multipart-parser");
 
 module.exports.scanProduct = async (event) => {
+  // Parse the multipart form data from the event
+  const parsedData = await parser.parse(event);
+  console.log("Parsed data:", parsedData);
+
+  // Check if any files were uploaded
+  if (!parsedData.files || parsedData.files.length === 0) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: "No file uploaded" }),
+    };
+  }
+
+  // Get the first file (assumes only one file is uploaded)
+  const file = parsedData.files[0];
   return event;
   /*return new Promise((resolve, reject) => {
     // Start barcode decoding

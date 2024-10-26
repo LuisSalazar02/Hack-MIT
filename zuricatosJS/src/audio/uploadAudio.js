@@ -74,6 +74,7 @@ module.exports.uploadAudio = async (event) => {
     console.log(lambdaResponse);
     const responseBody = JSON.parse(lambdaResponse.Payload);
     console.log(responseBody);
+    console.log(responseBody);
 
     //const bucketName = "audio-files-mit";
     const pruebitaKey = "pruebaAudio.mp3";
