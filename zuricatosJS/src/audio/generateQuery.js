@@ -20,7 +20,7 @@ module.exports.generateQuery = async (event) => {
     if (!querySql) throw new Error("No se pudo generar la consulta SQL.");
 
     console.log(`Consulta SQL generada: ${querySql}`);
-    console.log(`Valores separados: ${JSON.stringify(valores)}`);
+    console.log(`Valores separados: ${valores}`);
 
     return {
       statusCode: 200,
@@ -56,13 +56,13 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
     if (tipoOperacion === "compra") {
       prompt = `Genera una consulta SQL para insertar o actualizar productos en el inventario según este texto: ${textoTranscrito}. 
                 Si el producto ya existe, actualiza la cantidad; si no, insértalo como un nuevo registro. 
-                No incluyas explicaciones y separa los valores en una estructura JSON.`;
+                No incluyas explicaciones y separa los valores de la consulta SQL.`;
     } else if (tipoOperacion === "venta") {
       prompt = `Genera una consulta SQL para registrar una venta, disminuyendo la cantidad de productos en el inventario según este texto: ${textoTranscrito}. 
-                No incluyas explicaciones y separa los valores en una estructura JSON.`;
+                No incluyas explicaciones y separa los valores de la consulta SQL.`;
     } else if (tipoOperacion === "fianza") {
       prompt = `Genera una consulta SQL para registrar una fianza de productos, incluyendo la verificación del deudor en la base de datos según este texto: ${textoTranscrito}. 
-                No incluyas explicaciones y separa los valores en una estructura JSON.`;
+                No incluyas explicaciones y separa los valores de la consulta SQL.`;
     }
 
     // Llamar a la API de OpenAI para obtener la consulta SQL
@@ -71,7 +71,7 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
       {
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL y separa los valores en JSON." },
+          { role: "system", content: "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde con la consulta SQL y separa los valores sin JSON." },
           { role: "user", content: prompt },
         ],
       },
@@ -85,9 +85,19 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
 
     // Procesar la respuesta de GPT-4
     const respuesta = response.data.choices[0].message.content.trim();
-    const partes = respuesta.split("VALORES:");
-    const querySql = partes[0].trim();
-    const valores = partes[1] ? JSON.parse(partes[1].trim()) : {};
+
+    // Buscar los valores separados en la respuesta
+    let querySql = "";
+    let valores = "";
+
+    // Dividir la respuesta en la consulta SQL y los valores
+    if (respuesta.includes("VALORES:")) {
+      const partes = respuesta.split("VALORES:");
+      querySql = partes[0].trim();  // La consulta SQL
+      valores = partes[1].trim();   // Los valores separados
+    } else {
+      querySql = respuesta;  // Si no se encuentran valores separados, solo toma la consulta
+    }
 
     return { querySql, valores };
   } catch (error) {
