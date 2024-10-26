@@ -26,10 +26,9 @@ module.exports.queryReceiver = async (event) => {
         body: JSON.stringify(responseBody),
       };
     } else {
-      const url = `https://audio-files-mit.s3.us-east-2.amazonaws.com/AudioTestA.mp3`;
       return {
         statusCode: 200,
-        body: url,
+        body: "https://audio-files-mit.s3.us-east-2.amazonaws.com/AudioTestA.mp3",
       };
     }
   } catch (error) {
