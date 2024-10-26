@@ -1,5 +1,5 @@
 import json
-import db_pool
+from . import db_pool
 
 def create(event, context):
     conn = db_pool.get_connection()

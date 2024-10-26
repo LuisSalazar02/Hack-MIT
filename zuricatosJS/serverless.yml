@@ -1,0 +1,15 @@
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: nanostores
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-2
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /test
+          method: get

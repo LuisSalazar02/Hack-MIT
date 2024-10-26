@@ -9,6 +9,11 @@ provider:
     ACCESS_KEY_ID: ${env:ACCESS_KEY_ID}
     SECRET_ACCESS_KEY: ${env:SECRET_ACCESS_KEY}
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_HOST: ${env:DB_HOST}
+    DB_PORT: ${env:DB_PORT}
+    DB_NAME: ${env:DB_NAME}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -33,6 +38,13 @@ functions:
     events:
       - httpApi:
           path: /test/obtain/audio
+          method: get
+
+  testProcessAudio:
+    handler: src/audio/audioLambda.lambda_handler
+    events:
+      - httpApi:
+          path: /test/transcript/audio
           method: get
 
   cleanAudio:

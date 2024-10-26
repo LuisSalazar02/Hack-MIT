@@ -1,7 +1,7 @@
-#import noisereduce as nr
-#import librosa
-#import soundfile as sf
-#from scipy.signal import butter, lfilter
+import noisereduce as nr
+import librosa
+import soundfile as sf
+from scipy.signal import butter, lfilter
 import json
 ##libraries to manage the part of audio receiving
 import boto3

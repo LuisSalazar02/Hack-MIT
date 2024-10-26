@@ -1,17 +1,16 @@
 import json
-import db_pool
+from . import db_pool
 
-def read(event, context):
+async def read(event, context):
+    await db_pool.init_pool()
     conn = db_pool.get_connection()
     try:
         item_id = event['pathParameters']['id']
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM items WHERE id = %s;", (item_id,))
-            item = cur.fetchone()
-        if item:
+        result = await conn.fetch('SELECT * FROM your_table LIMIT 1')
+        if result:
             return {
                 "statusCode": 200,
-                "body": json.dumps({"id": item[0], "presupuesto_actual": item[1]})
+                "body": json.dumps({"id": result[0], "presupuesto_actual": result[1]})
             }
         else:
             return {"statusCode": 404, "body": "User not found"}

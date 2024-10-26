@@ -1,12 +1,17 @@
-import openai
-import boto3
+import sys
 import os
 
-from dotenv import load_dotenv
-import os
+# Add the lib directory to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../lib'))
+
+import openai
+import boto3
 
 # Inicializar la clave de OpenAI desde las variables de entorno
 openai.api_key = os.getenv('OPENAI_API_KEY')
+# Acceder a las variables
+aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+openai_api_key = os.getenv('OPENAI_API_KEY')
 
 # Inicializar el cliente de S3
 s3 = boto3.client('s3')
@@ -61,14 +66,3 @@ def transcribir_audio(audio_bytes):
     )
     return response['text']
 
-
-
-
-# Cargar variables de entorno desde .env
-load_dotenv()
-
-# Acceder a las variables
-aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-openai_api_key = os.getenv('OPENAI_API_KEY')
-
-lambda_handler("","")
