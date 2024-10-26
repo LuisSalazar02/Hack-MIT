@@ -41,7 +41,7 @@ functions:
     events:
       - httpApi:
           path: /test/database
-          method: get
+          method: post
 
   uploadAudio:
     handler: src/audio/uploadAudio.uploadAudio
