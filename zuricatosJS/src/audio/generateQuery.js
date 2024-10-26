@@ -16,14 +16,15 @@ module.exports.generateQuery = async (event) => {
     }
 
     // Generar la consulta SQL correspondiente
-    const querySql = await generarQuerySql(textoTranscrito, tipoOperacion);
+    const { querySql, valores } = await generarQuerySql(textoTranscrito, tipoOperacion);
     if (!querySql) throw new Error("No se pudo generar la consulta SQL.");
 
     console.log(`Consulta SQL generada: ${querySql}`);
+    console.log(`Valores separados: ${JSON.stringify(valores)}`);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ queryEjecutada: querySql }),
+      body: JSON.stringify({ queryEjecutada: querySql, valores: valores }),
     };
   } catch (error) {
     console.error("Error en el proceso:", error.message);
@@ -55,13 +56,13 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
     if (tipoOperacion === "compra") {
       prompt = `Genera una consulta SQL para insertar o actualizar productos en el inventario según este texto: ${textoTranscrito}. 
                 Si el producto ya existe, actualiza la cantidad; si no, insértalo como un nuevo registro. 
-                No incluyas explicaciones.`;
+                No incluyas explicaciones y separa los valores en una estructura JSON.`;
     } else if (tipoOperacion === "venta") {
       prompt = `Genera una consulta SQL para registrar una venta, disminuyendo la cantidad de productos en el inventario según este texto: ${textoTranscrito}. 
-                No incluyas explicaciones.`;
+                No incluyas explicaciones y separa los valores en una estructura JSON.`;
     } else if (tipoOperacion === "fianza") {
       prompt = `Genera una consulta SQL para registrar una fianza de productos, incluyendo la verificación del deudor en la base de datos según este texto: ${textoTranscrito}. 
-                No incluyas explicaciones.`;
+                No incluyas explicaciones y separa los valores en una estructura JSON.`;
     }
 
     // Llamar a la API de OpenAI para obtener la consulta SQL
@@ -70,7 +71,7 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
       {
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL." },
+          { role: "system", content: "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL y separa los valores en JSON." },
           { role: "user", content: prompt },
         ],
       },
@@ -82,10 +83,15 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
       }
     );
 
-    // Obtener y retornar la consulta SQL generada por GPT-4
-    return response.data.choices[0].message.content.trim();
+    // Procesar la respuesta de GPT-4
+    const respuesta = response.data.choices[0].message.content.trim();
+    const partes = respuesta.split("VALORES:");
+    const querySql = partes[0].trim();
+    const valores = partes[1] ? JSON.parse(partes[1].trim()) : {};
+
+    return { querySql, valores };
   } catch (error) {
     console.error("Error al generar la consulta SQL:", error.response ? error.response.data : error.message);
-    return null;
+    return { querySql: null, valores: null };
   }
 }
