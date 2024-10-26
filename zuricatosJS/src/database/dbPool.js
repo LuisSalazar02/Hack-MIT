@@ -8,6 +8,7 @@ const dbPool = new Pool({
   database: "nano_store_bd",
   password: "DopMfU8fNwnMKdH8LGSWXd6lmMjt4fzt",
   port: 5432,
+  ssl: false,
 });
 
 // Export the pool to be used in other files
