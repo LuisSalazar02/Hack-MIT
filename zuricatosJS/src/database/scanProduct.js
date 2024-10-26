@@ -33,7 +33,7 @@ module.exports.scanProduct = async (event) => {
     const imageBuffer = Buffer.from(base64Data, "base64");
 
     // Define the file path in the /tmp directory
-    const filePath = path.join("/tmp", filename);
+    const filePath = path.join("/tmp/", filename);
 
     // Write the buffer to a file in the /tmp directory
     fs.writeFileSync(filePath, imageBuffer);
