@@ -34,3 +34,10 @@ functions:
       - httpApi:
           path: /test/obtain/audio
           method: get
+
+  cleanAudio:
+    handler: src/audio/cleanAudio.cleanAudio
+    events:
+      - httpApi:
+          path: /audio/clean
+          method: post
