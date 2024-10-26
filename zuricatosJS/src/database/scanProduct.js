@@ -18,12 +18,18 @@ module.exports.scanProduct = async (event) => {
 
   // Get the first file (assumes only one file is uploaded)
   const file = parsedData.files[0];
-  return event;
-  /*return new Promise((resolve, reject) => {
+  const fileBuffer = file.content; // Assuming the parser returns the file content as a buffer
+
+  // Convert the buffer to a base64 data URL format that Quagga can read
+  const base64Image = `data:${file.mimetype};base64,${fileBuffer.toString(
+    "base64"
+  )}`;
+
+  return new Promise((resolve, reject) => {
     // Start barcode decoding
     Quagga.decodeSingle(
       {
-        src: "photo2.jpg",
+        src: base64Image,
         numOfWorkers: 0,
         inputStream: { size: 800 },
         decoder: { readers: ["ean_reader"] },
@@ -80,5 +86,5 @@ module.exports.scanProduct = async (event) => {
         }
       }
     );
-  });*/
+  });
 };
