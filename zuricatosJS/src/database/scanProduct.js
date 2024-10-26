@@ -19,6 +19,10 @@ module.exports.scanProduct = async (event) => {
         1,
       ]
     );
+    return {
+      statusCode: 200,
+      body: "Product registered successfully",
+    };
   } catch (error) {
     return {
       statusCode: 400,
