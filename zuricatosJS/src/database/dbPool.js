@@ -1,7 +1,5 @@
-// db.js
 const { Pool } = require("pg");
 
-// Create a pool instance with database configuration
 const dbPool = new Pool({
   user: "nano_store_bd",
   host: "dpg-cse1m60gph6c73bo46og-a.oregon-postgres.render.com",
@@ -13,5 +11,4 @@ const dbPool = new Pool({
   },
 });
 
-// Export the pool to be used in other files
 module.exports = dbPool;

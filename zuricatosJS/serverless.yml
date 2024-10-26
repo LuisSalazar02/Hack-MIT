@@ -50,7 +50,7 @@ functions:
     handler: src/database/queryDataBase.queryReceiver
     events:
       - httpApi:
-          path: /test/database
+          path: /database/query
           method: post
 
   uploadAudio:
@@ -73,3 +73,10 @@ functions:
       - httpApi:
           path: /audio/transcript
           method: post
+
+  getMetrics:
+    handler: src/database/metrics.getMetrics
+    events:
+      - httpApi:
+          path: /database/metrics
+          method: get
