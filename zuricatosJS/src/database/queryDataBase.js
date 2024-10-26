@@ -1,12 +1,11 @@
 const dbPool = require("./dbPool");
 
-module.exports.hello = async (event) => {
-  console.log(event);
+module.exports.queryReceiver = async (event) => {
   const { query, params } = JSON.parse(event.body);
   let client;
 
   try {
-    client = await dbPool.connect(); // Acquire a client from the pool
+    client = await dbPool.connect();
 
     const result = await client.query(query, params);
     const isSelectQuery = query.trim().toLowerCase().startsWith("select");
@@ -18,14 +17,14 @@ module.exports.hello = async (event) => {
         : "Query executed successfully",
     };
   } catch (error) {
-    console.error("Database query failed", error); // Log the error details for debugging
+    console.error("Database query failed", error);
     return {
       statusCode: 400,
       body: `Query execution failed: ${error.message}`,
     };
   } finally {
     if (client) {
-      client.release(); // Always release the client
+      client.release();
     }
   }
 };
