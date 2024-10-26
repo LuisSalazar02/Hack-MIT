@@ -5,6 +5,14 @@ provider:
   name: aws
   runtime: python3.12
   region: us-east-2
+  environment:
+    AWS_DEFAULT_REGION: us-east-2
+    AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY}
+    AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+
+plugins:
+  - serverless-dotenv-plugin
 
 functions:
   hello:
@@ -13,3 +21,6 @@ functions:
       - httpApi:
           path: /receive/audio
           method: post
+
+  testReturnAudio:
+    handler: src/audio/
