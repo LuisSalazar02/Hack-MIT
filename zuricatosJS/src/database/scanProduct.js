@@ -4,6 +4,7 @@ const Quagga = require("@ericblade/quagga2");
 const parser = require("lambda-multipart-parser");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
+const fs = require("fs");
 
 module.exports.scanProduct = async (event) => {
   // Parse the multipart form data from the event
