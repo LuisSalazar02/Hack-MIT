@@ -62,7 +62,7 @@ functions:
           method: post
 
   scanProducts:
-    handler: src/scans/scanProduct.scanProduct
+    handler: src/database/scanProduct.scanProduct
     events:
       - httpApi:
           path: /scan/product
