@@ -16,15 +16,17 @@ module.exports.generateQuery = async (event) => {
     }
 
     // Generar la consulta SQL correspondiente
-    const { querySql, valores } = await generarQuerySql(textoTranscrito, tipoOperacion);
-    if (!querySql) throw new Error("No se pudo generar la consulta SQL.");
+    const { tipoConsulta, valores } = await generarQuerySql(textoTranscrito, tipoOperacion);
+    if (!tipoConsulta) throw new Error("No se pudo generar la consulta SQL.");
 
-    console.log(`Consulta SQL generada: ${querySql}`);
-    console.log(`Valores separados: ${valores}`);
+    // Formatear la respuesta en un solo texto corrido
+    const respuestaFormateada = `{"${tipoConsulta}", "value": ${JSON.stringify(valores)}}`;
+
+    console.log(`Respuesta formateada: ${respuestaFormateada}`);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ queryEjecutada: querySql, valores: valores }),
+      body: respuestaFormateada,
     };
   } catch (error) {
     console.error("Error en el proceso:", error.message);
@@ -89,24 +91,24 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
     // Procesar la respuesta de GPT-4
     const respuesta = response.data.choices[0].message.content.trim();
 
-    // Dividir la respuesta en la consulta SQL y los valores
-    let querySql = "";
+    // Dividir la respuesta en el tipo de consulta y los valores
+    let tipoConsulta = "";
     let valores = [];
 
     if (respuesta.includes("VALORES:")) {
       const partes = respuesta.split("VALORES:");
-      querySql = partes[0].replace("inventario", "productos").trim(); // Cambiar "inventario" a "productos"
+      tipoConsulta = partes[0].replace("inventario", "productos").trim(); // Cambiar "inventario" a "productos"
       
       // Separar y limpiar los valores
       const valoresRaw = partes[1].trim().split(",");
       valores = valoresRaw.map(v => v.trim().replace(/'/g, "")); // Limpiar comillas
     } else {
-      querySql = respuesta.replace("inventario", "productos").trim(); // Si no hay valores, solo cambiar el nombre de la tabla
+      tipoConsulta = respuesta.replace("inventario", "productos").trim(); // Si no hay valores, solo cambiar el nombre de la tabla
     }
 
-    return { querySql, valores };
+    return { tipoConsulta, valores };
   } catch (error) {
     console.error("Error al generar la consulta SQL:", error.response ? error.response.data : error.message);
-    return { querySql: null, valores: null };
+    return { tipoConsulta: null, valores: null };
   }
 }
