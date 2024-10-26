@@ -10,11 +10,12 @@ const s3 = new AWS.S3();
 const openaiApiKey = process.env.OPENAI_API_KEY;
 
 // Función principal de Lambda
-exports.handler = async (event) => {
+module.exports.transcriptAudio = async (event) => {
   try {
     // Obtener el nombre del archivo de audio desde el evento
-    const bucketName = event.bucketName; // Nombre del bucket de S3
-    const fileKey = event.fileKey; // Nombre del archivo en S3
+    //const bucketName = event.bucketName; // Nombre del bucket de S3
+    //const fileKey = event.fileKey; // Nombre del archivo en S3
+    const { bucketName, fileKey } = JSON.parse(event.body);
 
     if (!bucketName || !fileKey) {
       throw new Error(
@@ -33,19 +34,11 @@ exports.handler = async (event) => {
     }
     console.log(`Texto transcrito: ${textoTranscrito}`);
 
-    // Generar la consulta SQL a partir del texto transcrito
-    const querySql = await generarQuerySql(textoTranscrito);
-    if (!querySql) {
-      throw new Error("No se pudo generar la consulta SQL.");
-    }
-    console.log(`Consulta SQL generada: ${querySql}`);
-
     // Respuesta exitosa
     return {
       statusCode: 200,
       body: JSON.stringify({
         textoTranscrito: textoTranscrito,
-        querySql: querySql,
       }),
     };
   } catch (error) {

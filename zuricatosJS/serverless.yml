@@ -66,3 +66,10 @@ functions:
       - httpApi:
           path: /scan/product
           method: post
+
+  transcriptAudio:
+    handler: src/audio/audio.transcriptAudio
+    events:
+      - httpApi:
+          path: /audio/transcript
+          method: post
