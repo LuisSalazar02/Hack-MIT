@@ -10,6 +10,7 @@ const s3 = new AWS.S3({ region: "us-east-2" });
  * @param {string} bucketName - The name of the S3 bucket
  * @returns {string} - A direct URL to access the file
  */
+
 async function uploadToS3(file, bucketName) {
   try {
     // Create a unique key using a timestamp and sanitized filename

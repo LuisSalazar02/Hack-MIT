@@ -11,7 +11,7 @@ module.exports.getMetrics = async (event) => {
     );
     const least_sellers = await client.query(
       "SELECT p.producto_nombre, SUM(tp.cantidad) AS cantidad_vendida FROM transaccion_productos tp JOIN \
-    productos p ON tp.producto_id = p.id GROUP BY p.producto_nombre ORDER BY total_quantity_sold ASC LIMIT 2;"
+    productos p ON tp.producto_id = p.id GROUP BY p.producto_nombre ORDER BY cantidad_vendida ASC LIMIT 2;"
     );
     const debtor = await client.query("SELECT nombre, adeudo FROM deudores");
     const budget = await client.query(
