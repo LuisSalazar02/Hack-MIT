@@ -80,3 +80,10 @@ functions:
       - httpApi:
           path: /database/metrics
           method: get
+
+  generateQuery:
+    handler: src/audio/generateQuery.generateQuery
+    events:
+      - httpApi:
+          path: /query/generate
+          method: post

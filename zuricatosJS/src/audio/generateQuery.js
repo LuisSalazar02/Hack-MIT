@@ -1,12 +1,4 @@
 const axios = require("axios");
-const AWS = require("aws-sdk");
-const fs = require("fs");
-const FormData = require("form-data");
-const path = require("path");
-const { Client } = require("pg");
-
-// Inicializar el cliente de S3
-const s3 = new AWS.S3();
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 
@@ -22,7 +14,11 @@ module.exports.generateQuery = async (event) => {
       querySql = await generarQuerySql(textoTranscrito, "compra");
     } else if (textoTranscrito.includes("vendí")) {
       querySql = await generarQuerySql(textoTranscrito, "venta");
-    } else if (textoTranscrito.includes("fié") || textoTranscrito.includes("me debe") || textoTranscrito.includes("presté")) {
+    } else if (
+      textoTranscrito.includes("fié") ||
+      textoTranscrito.includes("me debe") ||
+      textoTranscrito.includes("presté")
+    ) {
       querySql = await generarQuerySql(textoTranscrito, "fianza");
     }
 
@@ -32,7 +28,7 @@ module.exports.generateQuery = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        queryEjecutada: querySql
+        queryEjecutada: querySql,
       }),
     };
   } catch (error) {
@@ -65,7 +61,8 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
         messages: [
           {
             role: "system",
-            content: "Eres un asistente experto en SQL para bases de datos PostgreSQL.",
+            content:
+              "Eres un asistente experto en SQL para bases de datos PostgreSQL.",
           },
           { role: "user", content: prompt },
         ],
@@ -80,7 +77,10 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
 
     return response.data.choices[0].message.content.trim();
   } catch (error) {
-    console.error("Error al generar la consulta SQL:", error.response ? error.response.data : error.message);
+    console.error(
+      "Error al generar la consulta SQL:",
+      error.response ? error.response.data : error.message
+    );
     return null;
   }
 }
