@@ -23,15 +23,10 @@ module.exports.generateQuery = async (event) => {
     );
     if (!tipoConsulta) throw new Error("No se pudo generar la consulta SQL.");
 
-    // Quitar los primeros 12 caracteres de la consulta SQL
-    tipoConsulta = quitarPrimeros12Caracteres(tipoConsulta);
+    // Formatear la consulta en el formato esperado
+    const consultaFormateada = `${tipoConsulta};`;
 
-    // Formatear la respuesta en un solo texto corrido
-    const respuestaFormateada = `{"${tipoConsulta}", "value": ${JSON.stringify(
-      valores
-    )}}`;
-
-    console.log(`Respuesta formateada: ${respuestaFormateada}`);
+    console.log(`Consulta formateada: ${consultaFormateada}`);
 
     // Preparar los parámetros para la siguiente Lambda
     const lambda = new AWS.Lambda();
@@ -39,16 +34,16 @@ module.exports.generateQuery = async (event) => {
       FunctionName: "nanostores-dev-queryDataBase",
       InvocationType: "RequestResponse",
       Payload: JSON.stringify({
-        query: tipoConsulta, // Colocar la consulta generada
+        query: consultaFormateada, // Colocar la consulta generada
         params: valores, // Colocar los valores generados
       }),
     };
 
     // Invocar la siguiente Lambda
     const lambdaResponse = await lambda.invoke(lambdaParams).promise();
-    console.log(lambdaResponse);
     const responseBody = JSON.parse(lambdaResponse.Payload);
-    console.log(responseBody);
+    console.log("Respuesta de la Lambda:", responseBody);
+
     // Access the responseAudio property
     const responseAudio = responseBody.responseAudio;
     console.log("Response audio key from S3:", responseAudio);
@@ -95,18 +90,11 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
 
     // Ajustar el prompt según el tipo de operación
     if (tipoOperacion === "compra") {
-      prompt = `Genera una consulta SQL para insertar o actualizar productos en la tabla "productos" según este texto: ${textoTranscrito}. 
-                Si el producto ya existe, actualiza la cantidad; si no, insértalo como un nuevo registro. 
-                Devuelve solo la consulta SQL con los valores separados en el siguiente formato: 
-                'CONSULTA: ...; VALORES: producto, cantidad'.`;
+      prompt = `Genera una consulta SQL en el formato 'UPDATE productos SET column1 = value1, column2 = value2, ... WHERE condition' para actualizar o insertar productos según este texto: ${textoTranscrito}. Si el producto ya existe, actualiza la cantidad; si no, insértalo como un nuevo registro.`;
     } else if (tipoOperacion === "venta") {
-      prompt = `Genera una consulta SQL para registrar una venta, disminuyendo la cantidad de productos en la tabla "productos" según este texto: ${textoTranscrito}. 
-                Devuelve solo la consulta SQL con los valores separados en el siguiente formato: 
-                'CONSULTA: ...; VALORES: producto, cantidad'.`;
+      prompt = `Genera una consulta SQL en el formato 'UPDATE productos SET column1 = value1, column2 = value2, ... WHERE condition' para registrar una venta y disminuir la cantidad de productos según este texto: ${textoTranscrito}.`;
     } else if (tipoOperacion === "fianza") {
-      prompt = `Genera una consulta SQL para registrar una fianza de productos en la tabla "productos", incluyendo la verificación del deudor en la base de datos según este texto: ${textoTranscrito}. 
-                Devuelve solo la consulta SQL con los valores separados en el siguiente formato: 
-                'CONSULTA: ...; VALORES: deudor, producto, cantidad'.`;
+      prompt = `Genera una consulta SQL en el formato 'UPDATE productos SET column1 = value1, column2 = value2, ... WHERE condition' para registrar una fianza de productos, incluyendo la verificación del deudor según este texto: ${textoTranscrito}.`;
     }
 
     // Llamar a la API de OpenAI para obtener la consulta SQL
@@ -118,7 +106,7 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
           {
             role: "system",
             content:
-              "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL y los valores separados.",
+              "Eres un asistente experto en SQL para bases de datos PostgreSQL. Responde solo con la consulta SQL en el formato 'UPDATE' y los valores separados.",
           },
           { role: "user", content: prompt },
         ],
@@ -140,12 +128,12 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
 
     if (respuesta.includes("VALORES:")) {
       const partes = respuesta.split("VALORES:");
-      tipoConsulta = partes[0].replace("inventario", "productos").trim();
+      tipoConsulta = partes[0].trim().toLowerCase(); // Convertir a minúsculas
       // Separar y limpiar los valores
       const valoresRaw = partes[1].trim().split(",");
       valores = valoresRaw.map((v) => v.trim().replace(/'/g, ""));
     } else {
-      tipoConsulta = respuesta.replace("inventario", "productos").trim();
+      tipoConsulta = respuesta.trim().toLowerCase(); // Convertir a minúsculas
     }
 
     return { tipoConsulta, valores };
@@ -156,12 +144,4 @@ async function generarQuerySql(textoTranscrito, tipoOperacion) {
     );
     return { tipoConsulta: null, valores: null };
   }
-}
-
-// Función para quitar los primeros 12 caracteres de una cadena
-function quitarPrimeros12Caracteres(cadena) {
-  if (cadena.length > 12) {
-    return cadena.substring(12);
-  }
-  return cadena;
 }
