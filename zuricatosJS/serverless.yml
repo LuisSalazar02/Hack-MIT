@@ -16,9 +16,10 @@ provider:
 package:
   individually: true # Packages each function individually
   exclude:
-    - node_modules/** # Exclude global node_modules by default
+    - node_modules/** # Exclude initially to avoid redundancy
   include:
-    - src/** # Ensure all src files are included
+    - node_modules/** # Include the entire node_modules directory for each function
+    - src/** # Include your source files
 
 functions:
   hello:
@@ -48,6 +49,10 @@ functions:
       - httpApi:
           path: /audio/upload
           method: post
-    package:
-      include:
-        - node_modules/busboy/**
+
+  scanProducts:
+    handler: src/scans/scanProduct.scanProduct
+    events:
+      - httpApi:
+          path: /scan/product
+          method: post

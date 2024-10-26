@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "busboy": "^1.6.0"
+    "aws-sdk": "^2.1691.0",
+    "busboy": "^0.3.1"
   }
 }
